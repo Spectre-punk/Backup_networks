@@ -1,84 +1,102 @@
-"""
-Crear un script en Python que utilice Netmiko para conectarse a cada uno de
-los routers y extraer la configuración con el comando:
-o show running-config
-2. Automatizar la toma de backups:
-o Generar un archivo .txt por cada backup, incluyendo en el nombre del
-archivo la fecha y hora del respaldo.
-o Guardar cada backup en una carpeta separada por nombre del
-dispositivo.
-3. Comparar configuraciones:
-o Si el nuevo backup es diferente al anterior, reemplazar el archivo.
-o Si no hay cambios, conservar el archivo previo sin hacer modificaciones.
-4. Integración con GitHub:
-o Automatizar el proceso para que, cada vez que se guarde un backup
-nuevo, se suba al repositorio en GitHub.
-o Incluir en el commit message la fecha y hora del backup.
-
-"""
-from netmiko import ConnectHandler
 import os
-from datetime import datetime
 import subprocess
+from datetime import datetime
+from netmiko import ConnectHandler
 
-# Datos de conexión de los routers que se van a consultar.
 route_one = {
-        "device_type": "cisco_ios",
-        "host": "1.1.1.1",
-        "username": "cisco",
-        "password": "cisco",
-        }
+    "device_type": "cisco_ios",
+    "host": "1.1.1.1",
+    "username": "cisco",
+    "password": "cisco",
+    "secret": "cisco",
+}
 router_two = {
-        "device_type": "cisco_ios",
-        "host": "2.2.2.2",
-        "username": "cisco",
-        "password": "cisco",
-        }
+    "device_type": "cisco_ios",
+    "host": "2.2.2.2",
+    "username": "cisco",
+    "password": "cisco",
+    "secret": "cisco",
+}
 router_three = {
-        "device_type": "cisco_ios",
-        "host": "3.3.3.3",
-        "username": "cisco",
-        "password": "cisco",
-        }
+    "device_type": "cisco_ios",
+    "host": "3.3.3.3",
+    "username": "cisco",
+    "password": "cisco",
+    "secret": "cisco",
+}
 nodes = [route_one, router_two, router_three]
 
-for node in nodes:
-    # Conexión al router
-    connection = ConnectHandler(**node)
-    output = connection.send_command("show running-config")
-    connection.disconnect()
 
-    # Crear carpeta para el dispositivo si no existe
-    device_folder = f"backups/{node['host']}"
+def sanitize_config(config_text):
+    """Elimina marcas de tiempo dinámicas de Cisco para comparaciones precisas."""
+    ignored_keywords = [
+        "Last configuration change at",
+        "NVRAM config last updated at",
+        "Current configuration :",
+    ]
+    cleaned_lines = [
+        line
+        for line in config_text.splitlines()
+        if not any(keyword in line for keyword in ignored_keywords)
+    ]
+    return "\n".join(cleaned_lines)
+
+
+for node in nodes:
+    host = node["host"]
+    print(f"\n--- Procesando {host} ---")
+
+    try:
+        connection = ConnectHandler(**node)
+        connection.enable()
+        raw_output = connection.send_command("show running-config")
+        connection.disconnect()
+    except Exception as error:
+        print(f"Error al conectar con {host}: {error}")
+        continue
+
+    # Carpeta por dispositivo
+    device_folder = f"backups/{host}"
     os.makedirs(device_folder, exist_ok=True)
 
-    # Nombre del archivo con fecha y hora
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_file = f"{device_folder}/backup_{timestamp}.txt"
-
-    # Guardar el backup en un archivo temporal
-    with open(backup_file, "w") as f:
-        f.write(output)
-
-    # Verificar si hay un backup previo
-    previous_backups = sorted(
-        [f for f in os.listdir(device_folder) if f.startswith("backup_")],
-        reverse=True,
+    # Identificar si ya existe un archivo previo
+    archivos_existentes = sorted(
+        [f for f in os.listdir(device_folder) if f.startswith("backup_")]
     )
 
-    if len(previous_backups) > 1:
-        previous_backup_file = os.path.join(device_folder, previous_backups[1])
-        with open(previous_backup_file, "r") as f:
-            previous_output = f.read()
+    clean_current = sanitize_config(raw_output)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    new_backup_filename = f"backup_{timestamp}.txt"
+    new_backup_path = os.path.join(device_folder, new_backup_filename)
 
-        # Comparar configuraciones
-        if output == previous_output:
-            print(f"No changes detected for {node['host']}. Keeping previous backup.")
-            os.remove(backup_file)  # Eliminar el nuevo backup si no hay cambios
+    if archivos_existentes:
+        # Tomar el archivo previo existente
+        old_filename = archivos_existentes[-1]
+        old_backup_path = os.path.join(device_folder, old_filename)
+
+        with open(old_backup_path, "r") as f:
+            clean_previous = sanitize_config(f.read())
+
+        # Comparar las configuraciones limpias
+        if clean_current == clean_previous:
+            print(f"Sin cambios detectados en {host}. Conservando respaldo previo.")
+            continue
         else:
-            print(f"Changes detected for {node['host']}. Backup updated.")
-            # sube el nuevo backup a GitHub
-            subprocess.run(["git", "add", backup_file])
-            commit_message = f"Backup for {node['host']} at {timestamp}"
-            subprocess.run(["git", "commit", "-m", commit_message])
-            subprocess.run(["git", "push"])
+            print(f"Cambios detectados en {host}. Reemplazando respaldo...")
+            # Reemplazar: eliminar el archivo anterior y Git lo detecta
+            os.remove(old_backup_path)
+            subprocess.run(["git", "rm", old_backup_path], check=False)
+
+    # Escribir el nuevo respaldo
+    with open(new_backup_path, "w") as f:
+        f.write(raw_output)
+
+    # Subir a GitHub
+    try:
+        subprocess.run(["git", "add", device_folder], check=True)
+        commit_message = f"Backup actualizado para {host} al {timestamp}"
+        subprocess.run(["git", "commit", "-m", commit_message], check=True)
+        subprocess.run(["git", "push"], check=True)
+        print(f"Backup de {host} sincronizado exitosamente con GitHub.")
+    except subprocess.CalledProcessError as git_err:
+        print(f"Error al sincronizar con Git para {host}: {git_err}")
