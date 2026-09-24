@@ -1,0 +1,184 @@
+Building configuration...
+
+Current configuration : 3861 bytes
+!
+! Last configuration change at 01:07:07 UTC Thu Sep 24 2026 by cisco
+!
+version 17.18
+service timestamps debug datetime msec
+service timestamps log datetime msec
+!
+hostname R3-6
+!
+boot-start-marker
+boot-end-marker
+!
+!
+no aaa new-model
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+ip domain name lab.local3
+ip cef
+login on-success log
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+crypto pki trustpoint TP-self-signed-2039812
+ enrollment selfsigned
+ subject-name cn=IOS-Self-Signed-Certificate-2039812
+ revocation-check none
+ rsakeypair TP-self-signed-2039812
+ hash sha512
+!
+!
+crypto pki certificate chain TP-self-signed-2039812
+ certificate self-signed 01
+  3082032A 30820212 A0030201 02020101 300D0609 2A864886 F70D0101 0D050030 
+  2E312C30 2A060355 04030C23 494F532D 53656C66 2D536967 6E65642D 43657274 
+  69666963 6174652D 32303339 38313230 1E170D32 36303930 33303230 3030315A 
+  170D3336 30393032 30323030 30315A30 2E312C30 2A060355 04030C23 494F532D 
+  53656C66 2D536967 6E65642D 43657274 69666963 6174652D 32303339 38313230 
+  82012230 0D06092A 864886F7 0D010101 05000382 010F0030 82010A02 82010100 
+  9123BEBB 0C287D70 5A664528 FF04546B FB323D99 E49D93B3 594DC151 4793FBC3 
+  7ABD3DAB 883D4B76 84D84588 CFEABEE8 F68A4A4B 4DBE9253 6EB4307E B946D20E 
+  69A1B78F 5DB288C0 0DA5AD4A B297EF5C D00EB49F 1BECB288 1A63993E 50456463 
+  6032B299 2562C4B4 665FA875 15B32581 6939171D C93C6960 2796B569 AE542A34 
+  BA73FE1F 708ADD0F 10961837 D2CA3FD9 BC575AAC 182392F4 F4561D8F 6075D928 
+  F7BECBD5 FDF4861D 1244098E 37FF3176 327BCB3C 961ED7FF 10578D54 4FDEA491 
+  FA02EC78 2F7FCF7B F4EC357A F2533D79 E341133B DD04A902 AB4C49F2 2330AC74 
+  B09DA4A7 9CB69CBF 4EF9C9A2 8A4A7785 3EFB7DE3 9E712041 CBC6FC82 EDF520EB 
+  02030100 01A35330 51301D06 03551D0E 04160414 4DF94B9E 7F1AFF9C 95E06F52 
+  F7A956FC F6F40BEF 301F0603 551D2304 18301680 144DF94B 9E7F1AFF 9C95E06F 
+  52F7A956 FCF6F40B EF300F06 03551D13 0101FF04 05300301 01FF300D 06092A86 
+  4886F70D 01010D05 00038201 0100437D 37CCDF8E F00D9337 2709A386 029B95A7 
+  425826AA EEE121E0 1183AE86 D14D53E9 CAAD1EBE 1875C607 B24AC77D 4E15ABAC 
+  FDE2759A 1CD53EDC ACC21786 53A3E694 F0691F16 FAE00285 D7BE13A3 178913A0 
+  20BAEC25 2A6A6196 121C0DFE 97E56EEA 1A23F19A F59F23B9 0786FBD3 D38E9EBE 
+  761FCF24 0C797FA8 5E7B9370 9BAB6ECA 4441EDD8 4E77163C A43AAF44 9D70ED43 
+  283D96FA 2D8224C1 4A9A96EC DC1484AD DFF34C16 0BFF0F15 AB6F3B9E 3A090D7D 
+  3C5F462D F197B1CA BD74AB8E B168EB70 16AC7E02 E0225B36 CD00E669 4B39D3E6 
+  C26704C7 7A63A508 B39984A5 DE5DD874 299153ED 82583A80 D02FFE9E 3FF17CD2 
+  BF8FDA47 B09D79D2 6F110607 CBFA
+  	quit
+!
+!
+memory free low-watermark processor 79866
+!
+!
+spanning-tree mode rapid-pvst
+!
+enable secret 9 $9$XnhQ9RoAotAv7.$XrmNO8ydRyKGrbYjuv6OPzbzdoRwlSmjslf.NhfB3ZY
+!
+username cisco privilege 15 secret 9 $9$QOAlbD0dFQB...$l8bZc.YNo.QeYpNUYT1Z7l.kPC/VjGBcxALlb/q4wVk
+!
+!
+!
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 3.3.3.3 255.255.255.255
+!
+interface Loopback4
+ ip address 4.4.4.4 255.255.255.255
+!
+interface Loopback50
+ ip address 8.8.8.8 255.255.255.255
+!
+interface Ethernet0/0
+ no ip address
+ shutdown
+!
+interface Ethernet0/1
+ no ip address
+ shutdown
+!
+interface Ethernet0/2
+ no ip address
+ shutdown
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+!
+interface Ethernet1/0
+ no ip address
+ shutdown
+!
+interface Ethernet1/1
+ no ip address
+ shutdown
+!
+interface Ethernet1/2
+ ip address 10.0.6.6 255.255.255.252
+!
+interface Ethernet1/3
+ ip address 10.0.6.10 255.255.255.252
+!
+router ospf 1
+ network 3.3.3.3 0.0.0.0 area 0
+ network 10.0.6.4 0.0.0.3 area 0
+ network 10.0.6.8 0.0.0.3 area 0
+!
+ip forward-protocol nd
+!
+!
+ip http server
+ip http secure-server
+ip ssh bulk-mode 131072
+no logging btrace
+!
+!
+!
+control-plane
+!
+!
+!
+line con 0
+ activation-character 13
+ logging synchronous
+line aux 0
+ activation-character 13
+line vty 0 4
+ activation-character 13
+ login local
+ transport input ssh
+!
+!
+!
+!
+end
